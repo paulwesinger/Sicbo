@@ -15,8 +15,8 @@
 
 // Res for windowed Mode
 
-#define SD_WIDTH    1920//1280.0f//1024
-#define SD_HEIGHT   1200//768.0f//768
+#define SD_WIDTH    2880//1280.0f//1024
+#define SD_HEIGHT   1620//768.0f//768
 #define FULLSCREEN_WIDTH   3840//1680.0f//1920.0f
 #define FULLSCREEN_HEIGHT  2160//1050.0f//1200.0f
 
@@ -35,12 +35,6 @@ InitGL::InitGL (const std::string titel){
     _Mouse.x     = 0;
     _Mouse.y     = 0;
 
-    cube    = NULL;
-    cube2   = NULL;
-    cube3   = NULL;
-    sphere1 = NULL;
-    lightSource = NULL;
-    skybox  = NULL;
     base2d  = NULL;
    // cockpit = NULL;
     textrender = NULL;
@@ -60,19 +54,6 @@ InitGL::InitGL(const InitGL& orig) {
 }
 
 InitGL::~InitGL() {
-    safeDelete(cube);
-    safeDelete(cube2);
-    safeDelete(cube3);
-
-    safeDelete(sphere1);
-    safeDelete(lightSource);
-
-    if ( skybox != NULL)
-        delete skybox;
-    if (base2d != NULL  )
-        delete base2d;
-    if (cockpit != NULL)
-        delete cockpit;
 
     if (ambientLight != nullptr)
         delete  ambientLight;
@@ -83,10 +64,7 @@ InitGL::~InitGL() {
 }
 
 void InitGL::DeleteShaders() {
-    glDeleteProgram(cubeshaderprog_color);
-    glDeleteProgram(cubeshaderprog_tex);
-    glDeleteProgram(sphereshader_color);
-    glDeleteProgram(currentShader);
+
 }
 
 void InitGL::safeDelete(BaseObject * bo) {
@@ -95,12 +73,6 @@ void InitGL::safeDelete(BaseObject * bo) {
         bo = NULL;
     }
  }
-
-void InitGL::TestFunction() {
-    logwarn("Aus der Testfunction", "InitGL::TestFunction");
-
-}
-
 
 // ******************************************
 // Utils
@@ -120,74 +92,7 @@ void InitGL::InitShaders() {
 
     shader = new Shader();
 
-    // Vertex Shader
-    // ------------------------------------------------------------------------
-    std::string v_source ="ShaderSources/cubevertexshader.vex";
-    int vs = shader ->compileVertexShaderFromFile(v_source,filestream);
-    //Fragment Shader Color
-    v_source ="ShaderSources/colorshader.frg";
-    int fs_Color = shader ->compileFragmentShaderFromFile(v_source,filestream);
-    // Fragment Shader Texture
-    v_source ="ShaderSources/cubefragmentshaderMulti.frg";
-    int fs_Tex = shader ->compileFragmentShaderFromFile(v_source,filestream);
-    // ColorCubeShader
-    loginfo("Erstelle Cube Color Shader.................done");
-    shader->CreateCustomShader(cubeshaderprog_color);
-    shader->AttachCustomShader(cubeshaderprog_color,vs);
-    shader->AttachCustomShader(cubeshaderprog_color,fs_Color);
-    shader->CreateCustomProgram(cubeshaderprog_color);
 
-    //Texture CubeShader
-    loginfo("Erstelle Cube Texture Shader ..............done");
-    shader->CreateCustomShader(cubeshaderprog_tex);
-    shader->AttachCustomShader(cubeshaderprog_tex,vs);
-    shader->AttachCustomShader(cubeshaderprog_tex,fs_Tex);
-    shader->CreateCustomProgram(cubeshaderprog_tex);
-
-    // Shader für lightning
-    loginfo("Erstelle Cube Lightning Shader ..............done");
-    v_source ="ShaderSources/cubevertexnormalshader.vex";
-    int vsn = shader ->compileVertexShaderFromFile(v_source,filestream);
-    //Fragment Shader Color
-    v_source ="ShaderSources/cubefragmentshaderMultinormals.frg";
-    int fsn = shader ->compileFragmentShaderFromFile(v_source,filestream);
-    shader->CreateCustomShader(cubeshaderprog_normals);
-    shader->AttachCustomShader(cubeshaderprog_normals,vsn);
-    shader->AttachCustomShader(cubeshaderprog_normals,fsn);
-    shader->CreateCustomProgram(cubeshaderprog_normals);
-
-    glDetachShader(cubeshaderprog_color,vs);
-    glDetachShader(cubeshaderprog_color,fs_Color);
-    glDetachShader(cubeshaderprog_tex,fs_Tex);
-
-    glDetachShader(cubeshaderprog_normals,fsn);
-    glDetachShader(cubeshaderprog_normals,vsn);
-
-
-    // =======================================================================
-    //------------------------------------------------------------------------
-    // Sphere Shader color:
-    v_source = "ShaderSources/spherevertexshader.vex";
-    vs = shader->compileVertexShaderFromFile(v_source,filestream);
-    // Fragment sHader
-    v_source ="ShaderSources/spherefragmentshader.frg";
-    fs_Color = shader->compileVertexShaderFromFile(v_source,filestream);
-    //Alles zusammenfügen:
-    loginfo("Erstelle Sphere Color Shader ..............done");
-    shader -> CreateCustomShader(sphereshader_color);
-    shader -> AttachCustomShader(sphereshader_color,vs);
-    shader -> AttachCustomShader(sphereshader_color,fs_Color);
-    shader ->CreateCustomProgram(sphereshader_color);
-    // ========================================================================
-    //delete binares
-    shader->deleteShader(vs);
-    shader->deleteShader(fs_Color);
-    shader->deleteShader(fs_Tex);
-
-    shader->deleteShader(vsn);
-    shader->deleteShader(fsn);
-    // ========================================================================
-    currentShader = cubeshaderprog_normals;
 }
 
 void InitGL::DeleteUtils() {
@@ -239,21 +144,36 @@ bool InitGL::InitSDL2()  {
     int numDisplaymodes = SDL_GetNumDisplayModes(0);
     loginfo("Num Display modes: " + IntToString(numDisplaymodes), "InitGL::Init");
 
+    int allDisplays = SDL_GetNumVideoDisplays();
+    loginfo("Anzahl Displays " + IntToString(allDisplays));
+
+
     // Alle Display modes auflisten:
-    int currentdisplay = 1;
+    // ------------------------------------------------------
+    // ÄNDERN !!! -> fragen welcehes display genommen wird !!
+    int currentdisplay = allDisplays - 1;
+    // ------------------------------------------------------
     for (int i = 0; i < numDisplaymodes; i++ ) {
         SDL_DisplayMode dpm;
-        SDL_GetDisplayMode(currentdisplay,i,&dpm);
-        std::string w = IntToString(dpm.w);
-        std::string h = IntToString(dpm.h);
-        std::string index =IntToString(i);
-        try {
+        if ( SDL_GetDisplayMode(currentdisplay,i,&dpm) == 0 ) {
 
-            // todo: Pixelformat auswerten
-            loginfo("Resolution Mode[" + index+ "] : " + w + "x" + h ,"InitGL::Init");
+
+            std::string w = IntToString(dpm.w);
+            std::string h = IntToString(dpm.h);
+            std::string index =IntToString(i);
+            try {
+
+                // todo: Pixelformat auswerten
+                loginfo("Resolution Mode[" + index+ "] : " + w + "x" + h ,"InitGL::Init");
+            }
+            catch ( ...) {
+                logwarn("Konnte mode[" + index + "] nicht ermitteln");
+            }
         }
-        catch ( ...) {
-            logwarn("Konnte mode[" + index + "] nicht ermitteln");
+        else {
+            std::string s(SDL_GetError());
+            logwarn(" Warning: " + s);
+
         }
 
     }
@@ -377,6 +297,7 @@ void InitGL::setClearColor(float r, float g, float b) {
     _ClearColor.y = g;
     _ClearColor.z = b;
     _ClearColor.w = 1.0f;
+     glClearColor(r, g, b, 1.0);
 }
 
 void InitGL::SetClearColor(float r, float g, float b, float a) {
@@ -384,6 +305,8 @@ void InitGL::SetClearColor(float r, float g, float b, float a) {
     _ClearColor.y = g;
     _ClearColor.z = b;
     _ClearColor.w = a;
+
+    glClearColor(r, g, b, a);
 }
 
 void InitGL::InitEngineObject() {
@@ -415,46 +338,6 @@ void InitGL::InitEngineObject() {
 
     loginfo("Erstelle Standard Ambientes Licht ","InitGL::InitEngineObjects");
 
-    // ---------------------------------------
-    // Skybox ,objects init.
-    // ---------------------------------------
-    loginfo("Erstelle Standard SkyBox \"Dessert\" ........","InitGL::InitEngineObject");
-    skybox = new SkyBox(projection->GetPerspective());
-    std::vector<std::string> faces;
-
-    faces.push_back("skybox/desert/desert_lf.tga");
-    faces.push_back("skybox/desert/desert_rt.tga");
-    faces.push_back("skybox/desert/desert_up.tga");
-    faces.push_back("skybox/desert/desert_dn.tga");
-    faces.push_back("skybox/desert/desert_ft.tga");
-    faces.push_back("skybox/desert/desert_bk.tga");
-    skybox -> Load(faces);
-    loginfo("Erstelle Skybox ........Done","InitGL::InitEngineObject");
-
-
-
-    //================================
-    // Init 2D Objects
-    // ===============================
-
-
-
-
-    //  Diesen Block auslagern zur Engine
-
-    /*
-
-    loginfo("============================");
-    loginfo("Erstelle 2D Objekte.........");
-    loginfo("============================");
-    logimage("Erstelle TestIcon..........");
-    base2d = new Base2D(_ResX, _ResY,"icons/ibus-setup-hangul.png");
-    logimage("Erstelle Cockpt............");
-*/
-    //cockpit= new Base2D(_ResX, _ResY,"images/blackWidowAlpha1920x1200.png");
-
-
-
 
     logimage("Erstelle Text Renderer.....");
     textrender = new TextRender(_ResX, _ResY);
@@ -462,128 +345,20 @@ void InitGL::InitEngineObject() {
     InitShaders();
     loginfo("..... done all");
     loginfo("============================");
-
-
-    //========================================
-    // Init 3D Objects
-    //========================================
-
-    loginfo("Erstelle 3D Objects .........");
-    loginfo("Erstelle cube 1 - 3......done");
-
-    // Liste mit Texture pfaden erstellen
-
-    std::vector<std::string> cubeimages;
-    fileUtil fu;
-
-    cube  = new CCube(glm::vec3(0.0,0.0,0.0),glm::vec4(1.0,1.0,1.0,1.0), projection->GetPerspective());   // no scale
-    // Cube Shader init
-    cube->initShader(COLOR_SHADER,cubeshaderprog_color);
-    cube->initShader(TEXTURE_SHADER,cubeshaderprog_tex);
-    cube->initShader(LIGHT_SHADER, cubeshaderprog_normals);
-    cube->setActiveShader(TEXTURE_SHADER);
-
-
-    cube->addLight(ambientLight);
-
-
-
-    // Texture loading
-    bool texturesok =  fu.readLine("config/cubetextures.cfg",cubeimages);
-    if (texturesok)
-        cube->addTexture(cubeimages,"IniGL::  cube");
-    else
-        logwarn("Init::Cube :  konnte Textures nicht laden ! ","InitGL::Init::cube::AddTexture");
-
-    cubeimages.clear();
-
-    // Cube 2 init
-
-    cube2 = new CCube(glm::vec3(0.0,0.0,0.0),glm::vec4(1.0,1.0,1.0,1.0), projection->GetPerspective());
-    cube2->initShader(COLOR_SHADER,cubeshaderprog_color);
-    cube2->initShader(TEXTURE_SHADER,cubeshaderprog_tex);
-    cube2->initShader(LIGHT_SHADER,cubeshaderprog_normals);
-
-    cube2->setActiveShader(LIGHT_SHADER);
-    cube2->addLight(ambientLight);
-
-    texturesok =  fu.readLine("config/cube2textures.cfg",cubeimages);
-    if (texturesok)
-        cube2->addTexture(cubeimages,"InitGL::cube2");
-    else
-        logwarn("Init::Cube2 :  konnte Textures nicht laden ! ","InitGL::Init::cube2::addTexture");
-    cubeimages.clear();
-
-    // Cube3 init
-    cube3 = new CCube(glm::vec3(0.0,0.0,0.0),glm::vec4(1.0,1.0,1.0,1.0), projection->GetPerspective());
-    cube3->initShader(COLOR_SHADER,cubeshaderprog_color);
-    cube3->initShader(TEXTURE_SHADER,cubeshaderprog_tex);
-    cube3->initShader(LIGHT_SHADER,cubeshaderprog_normals);
-
-    cube3->setActiveShader(LIGHT_SHADER);
-    cube3->addLight(ambientLight);
-    // Texture loading
-    texturesok =  fu.readLine("config/cube2textures.cfg",cubeimages);
-    if (texturesok)
-        cube3->addTexture(cubeimages,"InitGL::cube3");
-    else
-        logwarn("Init::Cube3 konnte Textures nicht laden ! ","InitGL::Init::cube2::addTexture");
-    cubeimages.clear();
-
-
-    //----------------------------------------------------
-    // engine objects testen
-    //- --------------------------------------------------
-
-    for (int i = 0; i< objects3D.size(); i ++) {
-        objects3D.at(i) -> initShader(COLOR_SHADER,cubeshaderprog_color);
-        objects3D.at(i) -> initShader(TEXTURE_SHADER,cubeshaderprog_tex);
-        objects3D.at(i) -> initShader(LIGHT_SHADER,cubeshaderprog_normals);
-        objects3D.at(i) -> SetProjection(projection->GetPerspective());
-
-        //if (objects3D.at(i)->HasTextures() )
-        //    objects3D.at(i)->addTexture()
-
-        objects3D.at(i)->setActiveShader(LIGHT_SHADER);
-        objects3D.at(i)->addLight(ambientLight);
-    }
-
-
-    // Transformations
- //   cube->Translate(vec3(0,0,20));wird
- //   cube3->Translate(vec3(0,0,-2));
-    // Sphere
-    loginfo("Erstelle Sphere .........done");
-    sphere1  = new CSphere(glm::vec3(0.0,0.0,0.0),glm::vec4(1.0,0.0,0.0,1.0), projection->GetPerspective(),12,(GLfloat)4.0,shader);
-    sphere1->SetColor(glm::vec4(1.0,0.0,0.5,1.0));
-
-    //-----------------------------------------
-    // Lightsource as a spere
-    //-----------------------------------------
-    loginfo("Serstell LichtQuelle als wiesse spere....","InitGL::InitEngineObjects");
-    lightSource = new CSphere(ambientLight->getPos(),glm::vec4(0.0,0.0,1.0,1.0),projection->GetPerspective(),24,(GLfloat)2.0,shader );
-
-
-
-    loginfo("Done 3D Objects .............");
-
-    angleX = 0.0f;
-    angleY = 0.0f;
-    moveZ = 0.0f;
 }
 
 // --------------------------------------------
 // Adding's
 // --------------------------------------------
-void InitGL::add3Dobject(CCube *obj) {
+void InitGL::add3Dobject(BaseObject *obj) {
 
-    obj->initShader(COLOR_SHADER,cubeshaderprog_color);
-    obj->initShader(TEXTURE_SHADER,cubeshaderprog_tex);
-    obj->initShader(LIGHT_SHADER, cubeshaderprog_normals);
-    obj->setActiveShader(TEXTURE_SHADER);
+   // obj->initShader(COLOR_SHADER,cubeshaderprog_color);
+   // obj->initShader(TEXTURE_SHADER,cubeshaderprog_tex);
+   // obj->initShader(LIGHT_SHADER, cubeshaderprog_normals);
+   // obj->setActiveShader(TEXTURE_SHADER);
 
-    obj->addLight(ambientLight);
-    objects3D.push_back(obj);
+   // obj->addLight(ambientLight);
+    //objects3D.push_back(obj);
 }
 
 void InitGL::add2Dobject(Base2D *obj) {
@@ -598,35 +373,12 @@ void InitGL::Run() {
 
 
     bool quit = false;
-    static float rot_y = 1.0f;
-    static float tx = 0.05f;
+
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    // Diese transformations vectoren enthalten die "steps" für die Animation
-    vec3 steptrans;
-    vec3 steprotate;
-    vec3 stepscale;
 
-    bool left = true;
-    bool up = true;
-
-    steptrans  = vec3(0.0,-0.5,0.0);
-    steprotate = vec3(0.5,0.8,0.0);
-    stepscale  = vec3(0.0,0.0,0.0);
-
-    cube->Translate(vec3(8.5,0.0,0.0));
-    cube2->Translate(vec3(-8.0,-3.0,0.0));
-    cube3->Translate(vec3(0.0,-2.0,0.0));
-    sphere1->Translate(vec3(0.0,-4.0,0.0));
-
-
-
-
-  //  cube->Rotate(vec3(15.0,0.0,0.0));
-  //  cube2->Rotate(vec3(0.0,45,0.0));
-  //  cube3->Rotate(vec3(0.0,60.0,0.0));
     // timetest
     Uint32 tickstart = SDL_GetTicks();
     Uint32 tickend   = tickstart;
@@ -647,20 +399,9 @@ void InitGL::Run() {
         */
     }
 
-
-    // TEstfunction
-
-//    FP fp = TestFunction;
-//       base2d->setHandler(fp);
-
-    // Test Zeilen für Text Fenster
-
     std::vector<std::string> texts;
     textrender->AddString("Das ist die 1. Zeile");
     textrender->AddString("Das ist die 2. Zeile");
-    //texts.push_back("Das ist die 3. Zeile");
-    //texts.push_back("Da ist nochwas");
-    //.push_back("Da ist noch Zeile 5");
 
     textrender->SetHasBottom(true);
     textrender->SetHasHeader(true);
@@ -668,28 +409,10 @@ void InitGL::Run() {
     textrender->SetHasTexture(true);
     textrender->SetAlignRight(false);
 
-
-
-    for (int i = 0; i < objects3D.size(); i++ ) {
-        loginfo("TranslateX: " + FloatToString(objects3D.at(i)->GetTranslate().x));
-        loginfo("TranslateY: " + FloatToString(objects3D.at(i)->GetTranslate().y));
-        loginfo("TranslateZ: " + FloatToString(objects3D.at(i)->GetTranslate().z));
-        logEmptyLine();
-        loginfo("Color Red: " + FloatToString(objects3D.at(i)->GetColor().x));
-        loginfo("Color Green : " + FloatToString(objects3D.at(i)->GetColor().y));
-        loginfo("Color Blue: " + FloatToString(objects3D.at(i)->GetColor().z));
-        loginfo("Color Alpha: " + FloatToString(objects3D.at(i)->GetColor().w));
-        logEmptyLine(2);
-    }
-
-
-
-
-
-
-
-
     while ( ! quit) {
+
+        glClearColor(_ClearColor.x,_ClearColor.y, _ClearColor.z, _ClearColor.w);
+        glClear(GL_COLOR);
         elapsed = tickend - tickstart;
 
         tickstart = tickend;
@@ -767,12 +490,12 @@ void InitGL::Run() {
 
            // Key "C" und "T" sind für Color und Texture Shader
            case KEY_C: {
-               currentShader = cubeshaderprog_color;
+              // currentShader = cubeshaderprog_color;
                break;
            }
 
            case KEY_T: {
-               currentShader = cubeshaderprog_tex;
+              // currentShader = cubeshaderprog_tex;
                break;
            }
 
@@ -821,105 +544,6 @@ void InitGL::Run() {
        glEnable(GL_DEPTH_TEST);
        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-       vec3 dummy = steptrans;
-     //  cube->StepTranslate(dummy);
-
-        dummy=steprotate;
-
-        cube->StepRotate(steprotate);
-        cube->SetColor(vec4(1.0,0.0,0.0,1.0));
-        /**
-        * Alle mit 3 / wieder enklammern !!!
-        */
-        cube->SetFirstTranslate(true);
-     //   cube ->Draw( camera, currentShader);
-
-        cube2 -> SetColor(vec4(1.0,1.0, 1.0,1.0));
-     //   cube2 -> Calc( rot_y + 0.3f,tx + 0.05f);
-        if ( left ) {
-            dummy.x -= steptrans.x;
-            //printf(" dymmy v. cube2  %f \n",dummy.x );
-            if (dummy.x < 1.0)
-                left = false;
-        }
-        else{
-            dummy.x += steptrans.x;
-            //printf(" dymmy v. cube2  %f \n",dummy.x );
-            if (dummy.x > 1.0 )
-                left = true;
-        }
-        ///dummy.y += steprotate.y;TEXTURE
-        cube2->SetFirstTranslate(false);
-        cube2->StepRotate(dummy);
-        //cube2->Draw( camera, currentShader);
-
-        cube3 -> SetColor(vec4(0.0,1.0,0.0,1.0));
-
-
-
-
-     //   cube3 -> Calc( rot_y + 0.4,0.4);
-        //      dummy = steprotate;
-
-        dummy = vec3(1.5,3.0,0.0);
-        //dummy.y += steprotate.y;//0.07;
-        cube3->StepRotate(dummy);
-
-        dummy = steptrans;
-        //dummy.y += steptrans.y;//0.05;
-        //cube3->StepTranslate(dummy);
-        cube3->Translate(dummy);
-        cube3->StepRotate(dummy);
-
-        cube3->SetFirstTranslate(false);
-        cube3->Draw ( camera, currentShader);
-        //glUseProgram(0);
-
-        dummy = vec3(1.0,2.0,3.0);
-        sphere1->SetFirstTranslate(true);
-        sphere1 ->StepRotate(dummy);
-
-
-        //meshObject
-        dummy = vec3(1.0,0.0,0.0);
-      //  me->SetFirstTranslate(true);
-      //  me ->StepRotate(dummy);
-      //  me->StepTranslate(glm::vec3(2.0,0.5,0.0));
-      //  me->Translate(glm::vec3(dummy));
-      //  me->Draw(camera, currentShader);
-
-
-        // lightsource
-        dummy = vec3(1.0,0.0,0.0);
-        lightSource->SetFirstTranslate(true);
-        lightSource ->StepRotate(dummy);
-
-
-
-        //sphere1->SetColor(vec4(1.0,0.4,0.8,1.0));
-       // sphere1->StepTranslate(glm::vec3(2.0,0.5,0.0));
-        //sphere1->Translate(glm::vec3(dummy));
-        //currentShader = sphereshader_color;
-        sphere1->Draw(camera);//,sphereshader_color);
-        // lightsource
-        lightSource->Draw(camera);
-
-        // ===================================
-        // Das beste zum Schluss : Skybox
-        // ===================================
-        skybox->Draw(camera->GetView());
-
-        if (! objects3D.empty() ) {
-            for (unsigned int i=0;i < objects3D.size(); i++ ) {
-                dummy = vec3(1.0 * (float) i ,2.0,3.0);
-                objects3D[i]->SetProjection(projection->GetPerspective());
-
-                objects3D[i]->Translate(dummy);
-                objects3D[i]->StepRotate(dummy);
-                objects3D[i]->Draw(camera,currentShader);
-
-            }
-        }
 
         // ===================================
         // Alles für 2D Projektion vorbereiten
@@ -1057,30 +681,7 @@ int InitGL::HandleInput(SDL_Event e, uint &mox, uint &moy) {
             int stepx = e.motion.x - ( _ResX / 2);//_Mouse.lastx;
             int stepy = e.motion.y - ( _ResY / 2);//_Mouse.lasty;
 
-             /*
-            if ( stepx > 0 ) {
 
-                mox = MOUSE_Move_Right;
-                logwarn("Motion X " + IntToString(mox),"InitGL::HandleInput");
-            }
-            else if ( stepx < 0) {
-                mox = MOUSE_Move_Left;
-                logwarn("Motion X " + IntToString(mox),"InitGL::HandleInput");
-            }
-            // Das ganse für pitch
-
-            if (stepy > 0 ) {
-                moy =  MOUSE_Move_Down;
-                logwarn("Motion Y " + IntToString(moy),"InitGL::HandleInput");
-            }
-            else if (stepy < 0 ) {
-                moy =  MOUSE_Move_Up;
-                logwarn("Motion Y " + IntToString(moy),"InitGL::HandleInput");
-
-            }
-            else
-                return NO_INPUT;
-            */
             mox = e.motion.x;
             moy = e.motion.y;
 

@@ -1,9 +1,27 @@
-#include <iostream>
+#include "engine/engine.h"
 
-using namespace std;
 
-int main()
+int main(int argc,char ** argv)
 {
-    cout << "Hello World!" << endl;
-    return 0;
+
+
+    CEngine * init = new CEngine("Engine started");
+
+    if ( ! init ) {
+        printf( "Failed to Create Object !!! \n Aborting ......");
+        return 1;
+    }
+
+    if ( init->InitSDL2()) {
+
+        init->Run();
+
+    }
+    else {
+        printf(" Init SDL2 failed !! \n aborting ....");
+        return 2;
+    }
+    init->Done();
+
+    delete init;
 }
