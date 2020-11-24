@@ -11,6 +11,7 @@
 const std::string BUTTONS_CFG = "config/Buttons/";
 const std::string OBJECT3D_CFG =  "config/3DObjects/";
 const std::string SPACE = " ";
+const std::string IMAGE_PATH = "../Blender/Sicbo/";
 
 
 const int CFG_BUTTON_SIZE = 11;
@@ -29,6 +30,15 @@ public:
 
 protected:
     void loadButtons();
+
+
+    Base2D * spielFeld;
+
+    Base2D * jetonYellow;
+    Base2D * jetonRed;
+    Base2D * jetonGreen;
+    Base2D * jetonBlue;
+
 
     // Lists for all objects:
     std::vector<std::string> btnList;

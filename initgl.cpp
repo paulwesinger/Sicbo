@@ -35,7 +35,6 @@ InitGL::InitGL (const std::string titel){
     _Mouse.x     = 0;
     _Mouse.y     = 0;
 
-    base2d  = NULL;
    // cockpit = NULL;
     textrender = NULL;
    // soundengine = NULL;

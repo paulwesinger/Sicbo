@@ -87,7 +87,6 @@ protected:
 
     void safeDelete(BaseObject * bo);
 
-    Base2D * base2d;
 
     Camera * camera;  // = View !!
 

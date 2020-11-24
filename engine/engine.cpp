@@ -47,10 +47,37 @@ void CEngine::Init2D() {
     loginfo("============================");
     loginfo("Erstelle 2D Objekte.........");
     loginfo("============================");
-    logimage("Erstelle TestIcon..........");
-    base2d = new Base2D(_ResX, _ResY,"icons/ibus-setup-hangul.png");
-    base2d->setPos(500,400);
-    add2Dobject(base2d);
+
+    loginfo("============================");
+    loginfo("Erstelle Spielfeld..........");
+    loginfo("============================");
+    spielFeld = new Base2D(_ResX,_ResY,"../blender/Sicbo/Spielfeld.png");
+    logimage("Done Spielfeld    ..........");
+
+
+    //--------------------------------------
+    loginfo("============================");
+    loginfo("Erstelle Jetons.............");
+    loginfo("============================");
+    jetonRed = new Base2D(_ResX,_ResY,IMAGE_PATH +"JetonRed.png");
+    jetonRed->setPos(10,1500);
+    jetonBlue = new Base2D(_ResX,_ResY,IMAGE_PATH +"JetonBlue.png");
+    jetonBlue->setPos(100,1500);
+    jetonGreen = new Base2D(_ResX,_ResY,IMAGE_PATH + "JetonGreen.png");
+    jetonGreen->setPos(200,1500);
+    jetonYellow = new Base2D(_ResX,_ResY,IMAGE_PATH + "JetonGelb.png");
+    jetonYellow->setPos(300,1500);
+
+    add2Dobject(spielFeld);
+    add2Dobject(jetonRed);
+    add2Dobject(jetonBlue);
+    add2Dobject(jetonGreen);
+    add2Dobject(jetonYellow);
+
+    logimage("Done jetons       ..........");
+
+
+
   }
 
 void CEngine::Init3D(){
